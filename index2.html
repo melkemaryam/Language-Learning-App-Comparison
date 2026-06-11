@@ -1,0 +1,340 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Academic Paper Coding Dashboard</title>
+<style>
+body{font-family:Georgia,serif;background:#f7f7f5;max-width:1400px;margin:auto;padding:25px}
+.panel{background:white;border:1px solid #ddd;border-radius:10px;padding:20px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
+th{background:#f0f0f0}
+button{padding:8px 14px;border:none;border-radius:6px;cursor:pointer}
+.primary{background:#1f4e79;color:white}
+.secondary{background:#e9ecef}
+.score-btn{margin:2px;padding:4px 10px}
+.active{background:#1f4e79;color:white}
+input,textarea{width:100%;padding:6px}
+textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+
+td textarea {
+  resize: vertical;
+}
+
+.topnav{
+  background:#1f4e79;
+  padding:12px 18px;
+  margin-bottom:20px;
+  border-radius:10px;
+}
+
+.topnav a{
+  color:white;
+  text-decoration:none;
+  margin-right:18px;
+  font-weight:bold;
+}
+
+.topnav a:hover{
+  text-decoration:underline;
+}
+
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="archive.html">Archive</a>
+  <a href="contact.html">Contact</a>
+</nav>
+
+<h1>Systematic Review of Language Learning Apps</h1>
+
+<div class="panel">
+<h2>Paper Metadata</h2>
+<p>Title<br><input id="title"></p>
+<p>DOI / URL<br><input id="doi"></p>
+<p>Apps Studied<br><input id="app"></p>
+<p>Languages Studied<br><input id="lang"></p>
+<p>Study type<br>
+<select id="studyType">
+  <option value="General Review">General Review</option>
+  <option value="Use Case">Use Case</option>
+  <option value="Both">Both</option>
+</select>
+</p>
+</div>
+
+<div class="panel">
+<h2>Coding Scores</h2>
+<table>
+<thead>
+<tr>
+<th>Criterion</th>
+<th>Score</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody id="codingBody"></tbody>
+</table>
+
+<p><strong>Composite Score:</strong> <span id="score">0</span></p>
+
+<button class="primary" onclick="savePaper()">Save Paper</button>
+<button class="secondary" onclick="nextPaper()">Next Paper</button>
+<button class="secondary" onclick="downloadCSV()">Download Database CSV</button>
+<button class="secondary" onclick="resetAll()">Reset All</button>
+<button class="secondary" onclick="resetSome()">Reset Current Entry</button>
+</div>
+
+<div class="panel">
+<h2>Paper Database</h2>
+<table id="dbTable">
+<thead>
+<tr><th>Title</th><th>Language</th><th>Score</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<div class="panel">
+<h2>Leaderboard</h2>
+<table id="leaderboard">
+<thead>
+<tr><th>Rank</th><th>Paper</th><th>Score</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBun5d_4VVkcGS69jDqIm28k4Ah4aJ7Ja0",
+    authDomain: "language-learning-app-archive.firebaseapp.com",
+    databaseURL: "https://language-learning-app-archive-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "language-learning-app-archive",
+    storageBucket: "language-learning-app-archive.firebasestorage.app",
+    messagingSenderId: "934444112237",
+    appId: "1:934444112237:web:d09b8f2bc071a2d38ca264",
+    measurementId: "G-1P7G4Z4X2D"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+
+<script>
+
+const criteria=[
+"Language Coverage",
+"Pedagogical Depth",
+"Technical Capability",
+"Community & Sustainability",
+"Equity & Access"
+];
+
+const scores={};
+
+function buildTable(){
+ let body=document.getElementById("codingBody");
+ criteria.forEach((c,i)=>{
+   scores[i]=0;
+   let row=document.createElement("tr");
+   row.innerHTML=`
+   <td>${c}</td>
+   <td id="btns-${i}"></td>
+   <td><textarea id="note-${i}" rows="2"></textarea></td>`;
+   body.appendChild(row);
+
+   let btnContainer=document.getElementById(`btns-${i}`);
+   for(let s=0;s<=3;s++){
+      let b=document.createElement("button");
+      b.className="score-btn"+(s===0?" active":"");
+      b.innerText=s;
+      b.onclick=()=>setScore(i,s,b);
+      btnContainer.appendChild(b);
+   }
+ });
+}
+
+function loadPapersFromFirebase() {
+  db.ref("papers").on("value", snapshot => {
+    paperDatabase = [];
+    snapshot.forEach(child => {
+      paperDatabase.push({
+        _key: child.key,
+        ...child.val()
+      });
+    });
+    renderTables();
+  });
+}
+
+function savePaperToFirebase(paper) {
+  return db.ref("papers").push(paper);
+}
+
+function savePaper() {
+  const paper = {
+    title: title.value,
+    doi: doi.value,
+    app: app.value,
+    lang: lang.value,
+    studyType: studyType.value,
+    totalScore: calculateScore()
+  };
+
+  criteria.forEach((c, i) => {
+    paper[c + "_score"] = scores[i];
+    paper[c + "_notes"] = document.getElementById(`note-${i}`).value;
+  });
+
+  savePaperToFirebase(paper);
+  alert("Paper saved.");
+}
+
+// On page load
+loadPapersFromFirebase();
+
+function setScore(idx,val,btn){
+ scores[idx]=val;
+ document.querySelectorAll(`#btns-${idx} button`).forEach(x=>x.classList.remove("active"));
+ btn.classList.add("active");
+ calculateScore();
+}
+
+function calculateScore(){
+ let total=Object.values(scores).reduce((a,b)=>(a+b),0);
+ let average = total / 5;
+ document.getElementById("score").innerText = average;
+ return average;
+}
+
+function savePaper(){
+  let paper={
+    title:title.value,
+    doi:doi.value,
+    app:app.value,
+    lang:lang.value,
+    studyType:studyType.value,
+    totalScore:calculateScore()
+  };
+
+  criteria.forEach((c,i)=>{
+    paper[c+"_score"]=scores[i];
+    paper[c+"_notes"]=document.getElementById(`note-${i}`).value;
+  });
+
+  savePaperToFirebase(paper); // instead of setDB(db)
+  renderTables();
+  alert("Paper saved.");
+}
+
+
+// Replace with:
+let paperDatabase = []; // start empty, will be filled by Firebase
+loadPapersFromFirebase();
+
+// And update renderTables() to use paperDatabase instead of getDB():
+function renderTables(){
+  let db = paperDatabase; // use Firebase-loaded data instead of localStorage
+
+  let tbody=document.querySelector("#dbTable tbody");
+  tbody.innerHTML="";
+  db.forEach(p=>{
+    tbody.innerHTML+=`<tr><td>${p.title}</td><td>${p.lang}</td><td>${p.totalScore}</td></tr>`;
+  });
+
+  let lb=document.querySelector("#leaderboard tbody");
+  lb.innerHTML="";
+  [...db].sort((a,b)=>b.totalScore-a.totalScore)
+    .forEach((p,i)=>{
+      lb.innerHTML+=`<tr><td>${i+1}</td><td>${p.title}</td><td>${p.totalScore}</td></tr>`;
+    });
+}
+
+function nextPaper(){
+ document.querySelectorAll("input").forEach(x=>x.value="");
+ document.querySelectorAll("textarea").forEach(x=>x.value="");
+ Object.keys(scores).forEach(k=>scores[k]=0);
+ document.querySelectorAll(".score-btn").forEach(b=>b.classList.remove("active"));
+ document.querySelectorAll('[id^="btns-"]').forEach(div=>{
+   div.querySelector("button").classList.add("active");
+ });
+ calculateScore();
+}
+
+function downloadCSV(){
+ let db=getDB();
+ if(db.length===0){alert("Database is empty");return;}
+
+ let headers=Object.keys(db[0]);
+ let rows=[headers.join(",")];
+
+ db.forEach(r=>{
+   rows.push(headers.map(h=>'"'+String(r[h]??"").replace(/"/g,'""')+'"').join(","));
+ });
+
+ let blob=new Blob([rows.join("\\n")],{type:"text/csv"});
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="paper_database.csv";
+ a.click();
+}
+
+function resetAll(){
+  document.querySelectorAll("input").forEach(x => x.value = "");
+  document.querySelectorAll("textarea").forEach(x => x.value = "");
+  Object.keys(scores).forEach(k => scores[k] = 0);
+
+  document.querySelectorAll(".score-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll('[id^="btns-"]').forEach(div => {
+    div.querySelector("button").classList.add("active");
+  });
+
+  document.getElementById("score").innerText = 0;
+
+  localStorage.removeItem("paperDatabase"); // removes saved papers
+  renderTables(); // clears the database + leaderboard tables
+}
+
+function resetSome(){
+  document.querySelectorAll("input").forEach(x => x.value = "");
+  document.querySelectorAll("textarea").forEach(x => x.value = "");
+  Object.keys(scores).forEach(k => scores[k] = 0);
+
+  document.querySelectorAll(".score-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll('[id^="btns-"]').forEach(div => {
+    div.querySelector("button").classList.add("active");
+  });
+
+  calculateScore();
+}
+
+buildTable();
+calculateScore();
+renderTables();
+</script>
+
+</body>
+</html>
