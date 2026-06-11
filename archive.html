@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Archive of Language Learning Apps</title>
+<style>
+  body{font-family:Georgia,serif;background:#f7f7f5;max-width:1400px;margin:auto;padding:25px}
+.panel{background:white;border:1px solid #ddd;border-radius:10px;padding:20px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
+th{background:#f0f0f0}
+button{padding:8px 14px;border:none;border-radius:6px;cursor:pointer}
+.primary{background:#1f4e79;color:white}
+.secondary{background:#e9ecef}
+.score-btn{margin:2px;padding:4px 10px}
+.active{background:#1f4e79;color:white}
+input,textarea{width:100%;padding:6px}
+textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+
+td textarea {
+  resize: vertical;
+}
+
+.topnav{
+  background:#1f4e79;
+  padding:12px 18px;
+  margin-bottom:20px;
+  border-radius:10px;
+}
+
+.topnav a{
+  color:white;
+  text-decoration:none;
+  margin-right:18px;
+  font-weight:bold;
+}
+
+.topnav a:hover{
+  text-decoration:underline;
+}
+
+#appsTable a {
+  color: #1f4e79;
+  text-decoration: none;
+}
+
+#appsTable a:hover {
+  text-decoration: underline;
+}
+
+#appsTable button {
+  padding: 6px 10px;
+  margin-right: 4px;
+  font-size: 13px;
+}
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+}
+
+.modal-overlay.show {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-box {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 100%;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-box h2 {
+  margin-top: 0;
+}
+
+.modal-box label {
+  display: block;
+  margin-top: 12px;
+  font-weight: bold;
+}
+
+.modal-box input,
+.modal-box textarea,
+.modal-box select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 6px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.modal-box .form-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.modal-box .form-row button {
+  flex: 1;
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="archive.html">Archive</a>
+  <a href="contact.html">Contact</a>
+</nav>
+
+<div class="panel">
+  <h1>Archive of Language Learning Apps</h1>
+  <p>This shows all the current Language Learning Apps that focus on underserved languages.</p>
+</div>
+
+<div class="panel">
+  <h2>Language Learning Apps Archive</h2>
+  <table id="appsTable">
+    <thead>
+      <tr>
+        <th>App</th>
+        <th>Languages</th>
+        <th>Reference</th>
+        <th>Notes</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<button class="primary" id="openAddLangBtn">Add New Language</button>
+<button class="secondary" id="downloadCSVBtn">Download CSV</button>
+<button class="secondary" id="downloadJSONBtn">Download JSON</button>
+
+<div class="modal-overlay" id="addLangModal">
+  <div class="modal-box">
+    <span class="modal-close" id="closeAddLangBtn">&times;</span>
+    <h2>Add New Language App</h2>
+
+    <label for="appInput">App</label>
+    <input id="appInput" type="text" placeholder="e.g. Duolingo">
+
+    <label for="langInput">Languages</label>
+    <textarea id="langInput" rows="2" placeholder="e.g. Spanish, French, German"></textarea>
+
+    <label for="refLinkInput">Reference Link</label>
+    <input id="refLinkInput" type="url" placeholder="https://example.com/paper">
+
+    <label for="notesInput">Notes</label>
+    <textarea id="notesInput" rows="3" placeholder="Any notes about this app or study"></textarea>
+
+    <div class="form-row">
+      <button class="secondary" id="cancelAddLangBtn">Cancel</button>
+      <button class="primary" id="submitAddLangBtn">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const languageApps = [
+  {
+    app: "Duolingo",
+    languages: "Commercial",
+    ref: "https://example.com/paper-or-website",
+    notes: ""
+  },
+  {
+    app: "Busuu",
+    languages: "Use Case",
+    ref: "https://example.com/paper-or-website",
+    notes: ""
+  },
+  {
+    app: "Memrise",
+    languages: "Both",
+    ref: "https://example.com/paper-or-website",
+    notes: ""
+  }
+];
+
+
+function renderAppsTable() {
+  const tbody = document.querySelector("#appsTable tbody");
+  tbody.innerHTML = "";
+
+  languageApps.forEach((item, index) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${item.app}</td>
+        <td>${item.languages}</td>
+        <td><a href="${item.ref}" target="_blank" rel="noopener noreferrer">Where to find it</a></td>
+        <td>${item.notes}</td>
+        <td>
+          <button class="secondary" onclick="editApp(${index})">Edit</button>
+          <button class="secondary" onclick="deleteApp(${index})">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+
+renderAppsTable();
+
+const openAddLangBtn = document.getElementById("openAddLangBtn");
+const closeAddLangBtn = document.getElementById("closeAddLangBtn");
+const cancelAddLangBtn = document.getElementById("cancelAddLangBtn");
+const submitAddLangBtn = document.getElementById("submitAddLangBtn");
+const modal = document.getElementById("addLangModal");
+
+function openModal() {
+  modal.classList.add("show");
+}
+
+function deleteApp(index) {
+  if (confirm(`Delete "${languageApps[index].app}"?`)) {
+    languageApps.splice(index, 1);
+    renderAppsTable();
+  }
+}
+
+function editApp(index) {
+  const item = languageApps[index];
+
+  document.getElementById("appInput").value = item.app;
+  document.getElementById("langInput").value = item.languages || "";
+  document.getElementById("refLinkInput").value = item.ref;
+  document.getElementById("notesInput").value = item.notes || "";
+
+  submitAddLangBtn.textContent = "Save";
+  submitAddLangBtn.onclick = () => {
+    const app = document.getElementById("appInput").value.trim();
+    const languages = document.getElementById("langInput").value.trim();
+    const refLink = document.getElementById("refLinkInput").value.trim();
+    const notes = document.getElementById("notesInput").value.trim();
+
+    
+
+    languageApps[index] = {
+      ...item,
+      app,
+      languages,
+      ref: refLink,
+      notes
+    };
+
+    renderAppsTable();
+    closeModal();
+
+    submitAddLangBtn.textContent = "Add";
+    submitAddLangBtn.onclick = () => {
+      const appNew = document.getElementById("appInput").value.trim();
+      const languagesNew = document.getElementById("langInput").value.trim();
+      const refLinkNew = document.getElementById("refLinkInput").value.trim();
+      const notesNew = document.getElementById("notesInput").value.trim();
+
+      if (!appNew || !refLinkNew) {
+        alert("Please fill in App and Reference Link.");
+        return;
+      }
+
+      languageApps.push({
+        app: appNew,
+        studyType: "General Review",
+        ref: refLinkNew,
+        languages: languagesNew,
+        notes: notesNew
+      });
+
+      renderAppsTable();
+      closeModal();
+    };
+  };
+
+  openModal();
+}
+
+function closeModal() {
+  modal.classList.remove("show");
+  // Optionally clear form
+  document.getElementById("appInput").value = "";
+  document.getElementById("langInput").value = "";
+  document.getElementById("refLinkInput").value = "";
+  document.getElementById("notesInput").value = "";
+}
+
+openAddLangBtn.addEventListener("click", openModal);
+closeAddLangBtn.addEventListener("click", closeModal);
+cancelAddLangBtn.addEventListener("click", closeModal);
+
+// Close when clicking outside the modal box
+modal.addEventListener("click", function (event) {
+  if (event.target === modal) {
+    closeModal();
+  }
+});
+
+submitAddLangBtn.addEventListener("click", () => {
+  const app = document.getElementById("appInput").value.trim();
+  const languages = document.getElementById("langInput").value.trim();
+  const refLink = document.getElementById("refLinkInput").value.trim();
+  //const refTitle = document.getElementById("refTitleInput").value.trim();
+  const notes = document.getElementById("notesInput").value.trim();
+
+  if (!app || !refLink) {
+    alert("Please fill in App and Reference Link.");
+    return;
+  }
+
+  // You can add studyType from a dropdown if you want; here we default to "General Review"
+  const studyType = "General Review";
+
+  languageApps.push({
+    app,
+    studyType,
+    ref: refLink,
+    languages,
+    notes
+  });
+
+  renderAppsTable();
+  closeModal();
+});
+
+document.getElementById("downloadCSVBtn").addEventListener("click", () => {
+  if (languageApps.length === 0) {
+    alert("Database is empty");
+    return;
+  }
+
+  const headers = ["app", "languages", "ref", "notes"];
+  const rows = [headers.join(",")];
+
+  languageApps.forEach(item => {
+    const row = headers.map(h => {
+      const value = String(item[h] ?? "");
+      return '"' + value.replace(/"/g, '""') + '"';
+    });
+    rows.push(row.join(","));
+  });
+
+  const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "language_apps.csv";
+  a.click();
+});
+
+document.getElementById("downloadJSONBtn").addEventListener("click", () => {
+  if (languageApps.length === 0) {
+    alert("Database is empty");
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(languageApps, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "language_apps.json";
+  a.click();
+});
+
+</script>
+
+</body>
+</html>
