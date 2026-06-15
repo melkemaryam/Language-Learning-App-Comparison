@@ -51,14 +51,15 @@
 <div class="panel">
   <h2>Paper Metadata</h2>
   <p>Title<br><input id="title"></p>
+  <p>Year<br><input id="year"></p>
   <p>URL<br><input id="doi"></p>
   <p>Apps<br><input id="app"></p>
   <p>Languages<br><input id="lang"></p>
-  <p>Study type<br>
+  <p>Type<br>
     <select id="studyType">
-      <option value="General Review">General Review</option>
-      <option value="Use Case">Use Case</option>
-      <option value="Both">Both</option>
+      <option value="General Review">Commercial</option>
+      <option value="Use Case">Research: Review</option>
+      <option value="Both">Research: Focused Use Case</option>
     </select>
   </p>
 </div>
@@ -90,6 +91,7 @@
   <thead>
     <tr>
       <th>Title</th>
+      <th>Year</th>
       <th>URL</th>
       <th>Apps</th>
       <th>Languages</th>
@@ -135,6 +137,14 @@ const criteria = [
   "Equity & Access"
 ];
 
+const notePlaceholders = [
+  "Which languages are covered? How do they deal with data limitations?",
+  "Describe pedagogy, curriculum, educational guidelines, etc.",
+  "Special features, AI usage, evaluation, data collection...",
+  "Community size, interaction with native speakers, long-term sustainability...",
+  "Accessibility, affordability, inclusivity, device requirements..."
+];
+
 const scores = {};
 let paperDatabase = [];
 let editingPaperKey = null;
@@ -148,9 +158,17 @@ function buildTable() {
     row.innerHTML = `
       <td>${c}</td>
       <td id="btns-${i}"></td>
-      <td><textarea id="note-${i}" rows="2"></textarea></td>
+      <td>
+        <textarea
+          id="note-${i}"
+          rows="2"
+          placeholder="${notePlaceholders[i]}"
+        ></textarea>
+      </td>
     `;
     body.appendChild(row);
+
+
 
     const btnContainer = document.getElementById(`btns-${i}`);
     for (let s = 0; s <= 3; s++) {
@@ -196,6 +214,7 @@ async function savePaper() {
 
   const paper = {
     title: document.getElementById("title").value.trim(),
+    year: document.getElementById("year").value.trim(),
     doi: document.getElementById("doi").value.trim(),
     app: document.getElementById("app").value.trim(),
     lang: document.getElementById("lang").value.trim(),
@@ -234,6 +253,7 @@ function editPaper(index) {
   editingPaperKey = p._key;
 
   document.getElementById("title").value = p.title || "";
+  document.getElementById("year").value = p.year || "";
   document.getElementById("doi").value = p.doi || "";
   document.getElementById("app").value = p.app || "";
   document.getElementById("lang").value = p.lang || "";
@@ -286,6 +306,8 @@ function renderTables() {
     tbody.innerHTML += `
       <tr>
         <td>${p.title || ""}</td>
+
+        <td>${p.year || ""}</td>
 
         <td><a href="${p.doi || "#"}" target="_blank" rel="noopener noreferrer">${"Where to find it"}</a></td>
 
