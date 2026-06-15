@@ -56,10 +56,10 @@
   <p>Apps<br><input id="app"></p>
   <p>Languages<br><input id="lang"></p>
   <p>Type<br>
-    <select id="studyType">
-      <option value="General Review">Commercial</option>
-      <option value="Use Case">Research: Review</option>
-      <option value="Both">Research: Focused Use Case</option>
+    <select id="type">
+      <option value="Commercial">Commercial</option>
+      <option value="Research: Review">Research: Review</option>
+      <option value="Research: Focused Use Case">Research: Focused Use Case</option>
     </select>
   </p>
 </div>
@@ -95,7 +95,7 @@
       <th>URL</th>
       <th>Apps</th>
       <th>Languages</th>
-      <th>Study Type</th>
+      <th>Type</th>
       <th>Score</th>
       <th>Actions</th>
     </tr>
@@ -218,7 +218,7 @@ async function savePaper() {
     doi: document.getElementById("doi").value.trim(),
     app: document.getElementById("app").value.trim(),
     lang: document.getElementById("lang").value.trim(),
-    studyType: document.getElementById("studyType").value,
+    type: document.getElementById("type").value,
     totalScore: calculateScore()
   };
 
@@ -257,8 +257,8 @@ function editPaper(index) {
   document.getElementById("doi").value = p.doi || "";
   document.getElementById("app").value = p.app || "";
   document.getElementById("lang").value = p.lang || "";
-  document.getElementById("studyType").value =
-    p.studyType || "General Review";
+  document.getElementById("type").value =
+    p.type || "Commercial";
 
   criteria.forEach((c, i) => {
 
@@ -315,7 +315,7 @@ function renderTables() {
 
         <td>${p.lang || ""}</td>
 
-        <td>${p.studyType || ""}</td>
+        <td>${p.type || ""}</td>
 
         <td>${Number(p.totalScore || 0).toFixed(2)}</td>
 
