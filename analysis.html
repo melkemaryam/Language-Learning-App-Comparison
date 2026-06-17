@@ -49,7 +49,6 @@ td textarea {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix"></script>
 
 </head>
 <body>
@@ -72,46 +71,73 @@ td textarea {
 <div class="panel">
   <h2>Papers by Type</h2>
   <canvas id="typeChart"></canvas>
+  <br><br>
+  <button class="secondary" onclick="downloadChart(typeChart,'papers_by_type.png')">
+    Download PNG
+  </button>
 </div>
 
 <div class="panel">
   <h2>Average Criterion Scores</h2>
   <canvas id="criteriaChart"></canvas>
+  <br><br>
+  <button class="secondary" onclick="downloadChart(criteriaChart,'criteria_scores.png')">
+    Download PNG
+  </button>
 </div>
 
 <div class="panel">
   <h2>Papers by Year</h2>
   <canvas id="yearChart"></canvas>
+  <br><br>
+  <button class="secondary" onclick="downloadChart(yearChart,'papers_by_year.png')">
+    Download PNG
+  </button>
 </div>
 
 <div class="panel">
   <h2>Languages Mentioned</h2>
   <canvas id="languageChart"></canvas>
+  <br><br>
+  <button class="secondary" onclick="downloadChart(languageChart,'languages.png')">
+    Download PNG
+  </button>
 </div>
 
 <div class="panel">
   <h2>Average Score by Type</h2>
   <canvas id="typeScoreChart"></canvas>
+  <br><br>
+  <button class="secondary" onclick="downloadChart(typeScoreChart,'score_by_type.png')">
+    Download PNG
+  </button>
 </div>
 
 <div class="panel">
   <h2>Top Apps Mentioned</h2>
   <canvas id="appsChart"></canvas>
-</div>
-
-<div class="panel">
-  <h2>Criteria Correlation Heatmap</h2>
-  <canvas id="correlationChart"></canvas>
+  <br><br>
+  <button class="secondary" onclick="downloadChart(appsChart,'top_apps.png')">
+    Download PNG
+  </button>
 </div>
 
 <div class="panel">
   <h2>Composite Score Distribution</h2>
   <canvas id="distributionChart"></canvas>
+  <br><br>
+  <button class="secondary" onclick="downloadChart(distributionChart,'score_distribution.png')">
+    Download PNG
+  </button>
 </div>
 
 <div class="panel">
-  <h2>Language Coverage Over Time</h2>
+  <h2>App Releases Over Time</h2>
   <canvas id="timelineChart"></canvas>
+  <br><br>
+  <button class="secondary" onclick="downloadChart(timelineChart,'timeline.png')">
+    Download PNG
+  </button>
 </div>
 
 <script>
@@ -135,7 +161,6 @@ let yearChart;
 let languageChart;
 let typeScoreChart;
 let appsChart;
-let correlationChart;
 let distributionChart;
 let timelineChart;
 
@@ -163,7 +188,6 @@ function updateCharts(papers){
   buildAppsChart(papers);
   buildDistributionChart(papers);
   buildTimelineChart(papers);
-  buildCorrelationChart(papers);
 
 }
 
@@ -287,6 +311,19 @@ function buildYearChart(papers) {
           label: "Papers",
           data: years.map(y => counts[y])
         }]
+      },
+
+      options:{
+        responsive:true,
+
+        scales:{
+          y:{
+            ticks:{
+              precision:0,
+              stepSize:1
+            }
+          }
+        }
       }
     }
   );
@@ -295,7 +332,7 @@ function buildYearChart(papers) {
 function buildLanguageChart(papers) {
 
   const languageCounts = {};
-
+  
   papers.forEach(p => {
 
     if(!p.lang) return;
@@ -328,6 +365,10 @@ function buildLanguageChart(papers) {
 
   if(languageChart)
     languageChart.destroy();
+
+  const canvas = document.getElementById("languageChart");
+
+  canvas.height = Math.max(500, labels.length * 5);
 
   languageChart = new Chart(
     document.getElementById("languageChart"),
@@ -443,7 +484,16 @@ function buildAppsChart(papers){
         }]
       },
       options:{
-        indexAxis:"y"
+        indexAxis:"y",
+
+        scales:{
+          x:{
+            ticks:{
+              precision:0,
+              stepSize:1
+            }
+          }
+        }
       }
     }
   );
@@ -492,6 +542,7 @@ function buildDistributionChart(papers){
   );
 }
 
+
 function buildTimelineChart(papers){
 
   const years =
@@ -500,40 +551,40 @@ function buildTimelineChart(papers){
     )]
     .sort();
 
-  const languageCounts = {};
+  const paperCounts = {};
 
   papers.forEach(p=>{
 
-    if(!p.lang) return;
+    if(!p.app) return;
 
-    p.lang
+    p.app
       .split(",")
       .map(x=>x.trim())
-      .forEach(lang=>{
+      .forEach(app=>{
 
-        if(!languageCounts[lang]){
+        if(!paperCounts[app]){
 
-          languageCounts[lang] = {};
+          paperCounts[app] = {};
 
           years.forEach(y=>
-            languageCounts[lang][y]=0
+            paperCounts[app][y]=0
           );
         }
 
-        languageCounts[lang][p.year]++;
+        paperCounts[app][p.year]++;
 
       });
 
   });
 
   const datasets =
-    Object.keys(languageCounts)
-      .map(lang=>({
+    Object.keys(paperCounts)
+      .map(app=>({
 
-        label:lang,
+        label:app,
 
         data:years.map(y=>
-          languageCounts[lang][y]
+          paperCounts[app][y]
         )
 
       }));
@@ -559,96 +610,16 @@ function buildTimelineChart(papers){
   );
 }
 
-function buildCorrelationChart(papers){
+function downloadChart(chart, filename){
 
-  const fields = [
-    "Language Coverage_score",
-    "Pedagogical Depth_score",
-    "Technical Capability_score",
-    "Community & Sustainability_score",
-    "Equity & Access_score"
-  ];
+  const link = document.createElement("a");
 
-  const labels = [
-    "Language",
-    "Pedagogy",
-    "Technical",
-    "Community",
-    "Equity"
-  ];
+  link.href = chart.toBase64Image();
 
-  const data = [];
+  link.download = filename;
 
-  function corr(a,b){
+  link.click();
 
-    const n = a.length;
-
-    const meanA =
-      a.reduce((x,y)=>x+y,0)/n;
-
-    const meanB =
-      b.reduce((x,y)=>x+y,0)/n;
-
-    let num=0;
-    let denA=0;
-    let denB=0;
-
-    for(let i=0;i<n;i++){
-
-      num +=
-        (a[i]-meanA)*
-        (b[i]-meanB);
-
-      denA +=
-        Math.pow(a[i]-meanA,2);
-
-      denB +=
-        Math.pow(b[i]-meanB,2);
-    }
-
-    return num/
-      Math.sqrt(denA*denB);
-  }
-
-  fields.forEach((f1,i)=>{
-
-    fields.forEach((f2,j)=>{
-
-      const a =
-        papers.map(p=>
-          Number(p[f1]||0)
-        );
-
-      const b =
-        papers.map(p=>
-          Number(p[f2]||0)
-        );
-
-      data.push({
-        x:i,
-        y:j,
-        v:corr(a,b)
-      });
-
-    });
-
-  });
-
-  if(correlationChart)
-    correlationChart.destroy();
-
-  correlationChart = new Chart(
-    document.getElementById("correlationChart"),
-    {
-      type:"matrix",
-
-      data:{
-        datasets:[{
-          data
-        }]
-      }
-    }
-  );
 }
 
 

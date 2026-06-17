@@ -233,12 +233,14 @@ async function savePaper() {
 
     if (editingPaperKey) {
       await db.ref(`papers/${editingPaperKey}`).set(paper);
-      editingPaperKey = null;
       alert("Paper updated.");
     } else {
       await db.ref("papers").push(paper);
       alert("Paper saved.");
     }
+
+    // Reset the form after a successful save/update
+    resetScores();
 
 
   } catch(err) {
@@ -358,25 +360,36 @@ function renderTables() {
 
 function resetScores() {
 
+  // Exit edit mode
+  editingPaperKey = null;
+
+  // Reset metadata fields
+  document.getElementById("title").value = "";
+  document.getElementById("year").value = "";
+  document.getElementById("doi").value = "";
+  document.getElementById("app").value = "";
+  document.getElementById("lang").value = "";
+  document.getElementById("type").value = "Commercial";
+
+  // Reset scores
   Object.keys(scores).forEach(k => {
     scores[k] = 0;
   });
 
+  // Reset notes and buttons
   criteria.forEach((c, i) => {
 
     document.getElementById(`note-${i}`).value = "";
 
-    const buttons =
-      document.querySelectorAll(`#btns-${i} button`);
+    const buttons = document.querySelectorAll(`#btns-${i} button`);
 
-    buttons.forEach(btn =>
-      btn.classList.remove("active")
-    );
+    buttons.forEach(btn => btn.classList.remove("active"));
 
     buttons[0].classList.add("active");
   });
 
   calculateScore();
+
 }
 
 function downloadCSV() {

@@ -100,22 +100,18 @@
         <th>Languages</th>
         <th>Reference</th>
         <th>Notes</th>
-        <th>Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 </div>
 
-<button class="primary" id="openAddLangBtn">Add New App</button>
 <button class="secondary" id="downloadCSVBtn">Download CSV</button>
 <button class="secondary" id="downloadJSONBtn">Download JSON</button>
 
 <div class="modal-overlay" id="addLangModal">
   <div class="modal-box">
-    <span class="modal-close" id="closeAddLangBtn">&times;</span>
-    <h2>Add New Language App</h2>
-
+    
     <label for="appInput">App</label>
     <input id="appInput" type="text" placeholder="e.g. Duolingo">
 
@@ -128,10 +124,6 @@
     <label for="notesInput">Notes</label>
     <textarea id="notesInput" rows="3" placeholder="Any notes about this app or study"></textarea>
 
-    <div class="form-row">
-      <button class="secondary" id="cancelAddLangBtn">Cancel</button>
-      <button class="primary" id="submitAddLangBtn">Add</button>
-    </div>
   </div>
 </div>
 
@@ -155,129 +147,120 @@ const modal = document.getElementById("addLangModal");
 const submitAddLangBtn = document.getElementById("submitAddLangBtn");
 
 function loadAppsFromFirebase() {
-  db.ref("languageApps").on("value", snapshot => {
-    languageApps = [];
+
+  db.ref("papers").on("value", snapshot => {
+
+    const appMap = new Map();
+
     snapshot.forEach(child => {
-      languageApps.push({ _key: child.key, ...child.val() });
+
+      const paper = child.val();
+
+      if (!paper.app) return;
+
+      // Split multiple apps separated by commas
+      const apps = paper.app
+        .split(",")
+        .map(a => a.trim())
+        .filter(a => a);
+
+      apps.forEach(appName => {
+
+        if (!appMap.has(appName)) {
+
+          appMap.set(appName, {
+            app: appName,
+            languages: new Set(),
+            papers: [],
+            notes: new Set()
+          });
+
+        }
+
+        const entry = appMap.get(appName);
+
+        // Collect languages
+        (paper.lang || "")
+          .split(",")
+          .map(l => l.trim())
+          .filter(Boolean)
+          .forEach(l => entry.languages.add(l));
+
+        // Collect paper information
+        entry.papers.push({
+          title: paper.title || "Untitled",
+          doi: paper.doi || "",
+          year: paper.year || ""
+        });
+
+        // Collect paper types (optional)
+        if (paper.type) {
+          entry.notes.add(paper.type);
+        }
+
+      });
+
     });
+
+    languageApps = [...appMap.values()].map(item => ({
+
+      app: item.app,
+
+      languages: [...item.languages].sort().join(", "),
+
+      paperCount: item.papers.length,
+
+      references: item.papers,
+
+      notes: [...item.notes].join(", ")
+
+    }))
+    .sort((a, b) => a.app.localeCompare(b.app));
+
     renderAppsTable();
+
   });
-}
 
-function addAppToFirebase(appData) {
-  return db.ref("languageApps").push(appData);
-}
-
-function deleteAppFromFirebase(index) {
-  return db.ref(`languageApps/${languageApps[index]._key}`).remove();
-}
-
-function editAppInFirebase(index, updatedData) {
-  return db.ref(`languageApps/${languageApps[index]._key}`).set(updatedData);
 }
 
 function renderAppsTable() {
+
   const tbody = document.querySelector("#appsTable tbody");
   tbody.innerHTML = "";
 
-  languageApps.forEach((item, index) => {
+  languageApps.forEach(item => {
+
+    const refs = item.references
+      .map(ref => `
+        <div>
+          <a href="${ref.doi}" target="_blank">
+            ${ref.title} (${ref.year})
+          </a>
+        </div>
+      `)
+      .join("");
+
     tbody.innerHTML += `
       <tr>
-        <td>${item.app || ""}</td>
-        <td>${item.languages || ""}</td>
-        <td><a href="${item.ref || "#"}" target="_blank" rel="noopener noreferrer">${item.refTitle || "Where to find it"}</a></td>
-        <td>${item.notes || ""}</td>
+
+        <td>${item.app}</td>
+
+        <td>${item.languages}</td>
+
         <td>
-          <button class="secondary edit-btn" data-index="${index}">Edit</button>
-          <button class="secondary delete-btn" data-index="${index}">Delete</button>
+          <strong>${item.paperCount} study${item.paperCount !== 1 ? "ies" : ""}</strong>
+          ${refs}
         </td>
+
+        <td>${item.notes}</td>
+
       </tr>
     `;
+
   });
 
-  document.querySelectorAll(".edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => editApp(Number(btn.dataset.index)));
-  });
-
-  document.querySelectorAll(".delete-btn").forEach(btn => {
-    btn.addEventListener("click", () => deleteApp(Number(btn.dataset.index)));
-  });
 }
 
-function openModal() {
-  modal.classList.add("show");
-}
-
-function closeModal() {
-  modal.classList.remove("show");
-  document.getElementById("appInput").value = "";
-  document.getElementById("langInput").value = "";
-  document.getElementById("refLinkInput").value = "";
-  document.getElementById("notesInput").value = "";
-  submitAddLangBtn.textContent = "Add";
-}
-
-function addCurrentApp() {
-  const app = document.getElementById("appInput").value.trim();
-  const languages = document.getElementById("langInput").value.trim();
-  const ref = document.getElementById("refLinkInput").value.trim();
-  const notes = document.getElementById("notesInput").value.trim();
-
-  if (!app || !ref) return alert("Please fill in App and Reference Link.");
-
-  addAppToFirebase({ app, languages, ref, notes }).then(closeModal);
-}
-
-let editingIndex = null;
-
-submitAddLangBtn.addEventListener("click", async () => {
-  const app = document.getElementById("appInput").value.trim();
-  const languages = document.getElementById("langInput").value.trim();
-  const ref = document.getElementById("refLinkInput").value.trim();
-  const notes = document.getElementById("notesInput").value.trim();
-
-  if (!app || !ref) return alert("Please fill in App and Reference Link.");
-
-  const data = { app, languages, ref, notes };
-
-  if (editingIndex === null) {
-    await addAppToFirebase(data);
-  } else {
-    await editAppInFirebase(editingIndex, data);
-  }
-
-  editingIndex = null;
-  submitAddLangBtn.textContent = "Add";
-  closeModal();
-});
-
-
-function editApp(index) {
-  editingIndex = index;
-  const item = languageApps[index];
-
-  document.getElementById("appInput").value = item.app || "";
-  document.getElementById("langInput").value = item.languages || "";
-  document.getElementById("refLinkInput").value = item.ref || "";
-  document.getElementById("notesInput").value = item.notes || "";
-
-  submitAddLangBtn.textContent = "Save";
-  openModal();
-}
-
-function deleteApp(index) {
-  if (confirm(`Delete "${languageApps[index].app}"?`)) {
-    deleteAppFromFirebase(index);
-  }
-}
-
-document.getElementById("openAddLangBtn").addEventListener("click", openModal);
-document.getElementById("closeAddLangBtn").addEventListener("click", closeModal);
-document.getElementById("cancelAddLangBtn").addEventListener("click", closeModal);
-
-modal.addEventListener("click", function(event) {
-  if (event.target === modal) closeModal();
-});
 
 document.getElementById("downloadCSVBtn").addEventListener("click", () => {
   if (languageApps.length === 0) return alert("Database is empty");
@@ -303,7 +286,6 @@ document.getElementById("downloadJSONBtn").addEventListener("click", () => {
 });
 
 loadAppsFromFirebase();
-closeModal();
 </script>
 
 </body>
