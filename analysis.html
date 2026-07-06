@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <title>Analysis</title>
 <style>
-  body{font-family:Georgia,serif;background:#f7f7f5;max-width:1400px;margin:auto;padding:25px}
-.panel{background:white;border:1px solid #ddd;border-radius:10px;padding:20px;margin-bottom:20px}
+  body{font-family:Georgia,serif;background:#ABB066;max-width:1400px;margin:auto;padding:25px}
+.panel{background:#f7f7f5;border:1px solid #ddd;border-radius:10px;padding:20px;margin-bottom:20px}
 table{width:100%;border-collapse:collapse}
 th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
 th{background:#f0f0f0}
 button{padding:8px 14px;border:none;border-radius:6px;cursor:pointer}
-.primary{background:#1f4e79;color:white}
+.primary{background:#3B4B28;color:#f7f7f5}
 .secondary{background:#e9ecef}
 .score-btn{margin:2px;padding:4px 10px}
-.active{background:#1f4e79;color:white}
+.active{background:#3B4B28;color:#f7f7f5}
 input,textarea{width:100%;padding:6px}
 textarea {
   width: 100%;
@@ -28,7 +28,7 @@ td textarea {
 }
 
 .topnav{
-  background:#1f4e79;
+  background:#3B4B28;
   padding:12px 18px;
   margin-bottom:20px;
   border-radius:10px;
@@ -44,6 +44,44 @@ td textarea {
 .topnav a:hover{
   text-decoration:underline;
 }
+
+/* Header banner: small portion of image, full width, 2cm tall */
+    .header-banner {
+      width: 100%;
+      height: 2cm;
+      overflow: hidden;
+      margin-bottom: 20px;
+      position: relative; /* allow absolute positioning of the credit */
+    }
+
+    .header-banner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Credit overlay on the image */
+    .image-credit {
+      position: absolute;
+      bottom: 6px;
+      left: 10px;
+      right: 10px;
+      font-size: 10px;
+      line-height: 1.3;
+      color: white;
+      padding: 1px 2px;
+      border-radius: 2px;
+    }
+
+    .image-credit a {
+      color: white;
+      text-decoration: underline;
+    }
+
+    .image-credit a:hover {
+      text-decoration: none;
+    }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -53,12 +91,21 @@ td textarea {
 </head>
 <body>
 
+<div class="header-banner">
+  <img src="images/EliseRacine-DigitOccupationalCircularity -3840x1441.png" alt="A digital collage showing miniature human figures from historical paintings of agricultural workers placed on a green circuit board with computer chips. The image has a mirrored composition with the right half pixelated. The tiny human figures appear to be walking on or standing atop the electronic components, creating a striking contrast between traditional farm labor and modern digital technology.">
+  <span class="image-credit">
+    <a href="https://www.linkedin.com/in/eliseeracine/">Elise Racine</a> &amp; <a href="https://digital-dialogues.co.uk/">Digit</a>
+    <a href="https://betterimagesofai.org/images?artist=EliseRacine&title=OccupationalCircularity">Occupational Circularity </a>
+    <a href="https://creativecommons.org/licenses/by/4.0/">Licenced by CC-BY 4.0</a>
+  </span>
+</div>
+
 <nav class="topnav">
   <a href="index.html">Home</a>
-  <a href="about.html">About</a>
   <a href="archive.html">Archive</a>
-  <a href="contact.html">Contact</a>
   <a href="analysis.html">Analysis</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
 </nav>
 
 <div class="panel">
